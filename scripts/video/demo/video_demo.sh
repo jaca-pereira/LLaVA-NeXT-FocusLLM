@@ -27,7 +27,7 @@ if [ "$OVERWRITE" = False ]; then
 else
     SAVE_DIR=$(basename $CKPT)_${CONV_MODE}_frames_${FRAMES}_stride_${POOL_STRIDE}
 fi
-    
+
 python3 playground/demo/video_demo.py \
     --model-path $CKPT \
     --video_path ${VIDEO_PATH} \
