@@ -1,9 +1,11 @@
 set -x
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+#export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 EVAL_DATA_DIR=eval
 OUTPUT_DIR=eval_output
-CKPT_NAME=VideoLLaMA2-7B-16F
-CKPT=DAMO-NLP-SG/${CKPT_NAME}
+CKPT_NAME=llava-onevision-qwen2-0.5b-ov
+CKPT=lmms-lab/${CKPT_NAME}
 
 gpu_list="${CUDA_VISIBLE_DEVICES:-0}"
 IFS=',' read -ra GPULIST <<< "$gpu_list"
@@ -37,7 +39,7 @@ if [ ! -f "$output_file" ]; then
     for IDX in $(seq 0 $((CHUNKS-1))); do
         # select the GPUs for the task
         gpu_devices=$(IFS=,; echo "${GPULIST[*]:$(($IDX*$GPUS_PER_TASK)):$GPUS_PER_TASK}")
-        TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES=${gpu_devices} python3 videollama2/eval/inference_video_mcqa_videomme.py \
+        TRANSFORMERS_OFFLINE=1 CUDA_VISIBLE_DEVICES=${gpu_devices} python3 -m llava.eval.inference_video_mcqa_videomme \
             --model-path ${CKPT} \
             --video-folder ${EVAL_DATA_DIR}/videomme/videos \
             --subtitle-folder ${EVAL_DATA_DIR}/videomme/subtitles \
@@ -84,14 +86,14 @@ if [ ! -f "$output_file" ]; then
 fi
 
 outputs_files="$output_file,$output_sub_file"
-python videollama2/eval/eval_video_mcqa_videomme.py \
+python llava/eval/eval_video_mcqa_videomme.py \
     --results_file $outputs_files \
     --video_duration_type "short,medium,long" \
     --focus_layers $focus_layers \
     --focus_segments $focus_segments \
     --selection_type $reforward \
     --nr_frames $nr_frames \
-    --skip_missing \
+    --skip_missing
     #--return_categories_accuracy \
     #--return_sub_categories_accuracy \
     #--return_task_types_accuracy \

@@ -1,3 +1,4 @@
+import os
 from operator import attrgetter
 from llava.model.builder import load_pretrained_model
 from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
@@ -15,7 +16,7 @@ from decord import VideoReader, cpu
 
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"
+pretrained = "lmms-lab/llava-onevision-qwen2-7b-ov"
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"
@@ -34,7 +35,7 @@ model.get_model().config.smooth_forward_segments = np.array([1])
 model.get_model().config.focus_llm = False
 #get boolean value from string
 model.get_model().config.reforward = False
-num_frames = 32
+num_frames = 16
 if num_frames < 80:
     model.get_model().config.use_cpu = False
     model.get_model().config.use_sequential = False
@@ -61,7 +62,7 @@ def load_video(video_path, max_frames_num):
 
 
 # Load and process video
-video_path = "docs/RoadAccidents127_x264.mp4"
+video_path = "docs/jobs.mp4"
 video_frames = load_video(video_path, num_frames)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
@@ -71,13 +72,36 @@ image_tensors.append(frames)
 # Prepare conversation input
 conv_template = "qwen_1_5"
 #question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
-question = f"{DEFAULT_IMAGE_TOKEN}\nWhat happens between the truck and the train?"
+#question = f"{DEFAULT_IMAGE_TOKEN}\nWhat happens between the truck and the train?"
+"""question = f"{DEFAULT_IMAGE_TOKEN}\nThis video's subtitles are listed below:\nthis has been Messi's tournament he's\n \
+Bailey comes to meet him\n\
+out the first half of the first half\n\
+cold as ice\n\
+of Di Maria and then not overcooking it\n\
+12 minutes to go he feels the contact\n\
+net comes back across goal\n\
+and the execution from killing and Bape\n\
+defending him back into the middle to\n\
+latora Martinez is going to get to that\n\
+doesn't matter latora Martinez on side\n\
+France will shoot first\n\
+yes\n\
+they call them one he delivers\n\
+Select the best answer to the following multiple-choice question based on the video. Respond with only the letter (A, B, C, or D) of the correct option.\n\
+Which significant football event is depicted in the video? \n\
+A. FIFA World Cup 2022 Final. \n\
+B. 2023 UEFA Champions League final.\n\
+C. FIFA World Cup 2018 Final. \n\
+D. 2018 UEFA European Championship Final. \n\
+The best answer is: " """
+question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
 
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
 
+print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]
 

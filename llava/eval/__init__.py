@@ -1,24 +1,18 @@
 import copy
+import os
 import warnings
-from functools import partial
-from platform import processor
 
 import numpy as np
 import torch
-from sympy.strategies.core import switch
-from timm.layers import swish
 
-from inference_video import conv_template
-from ..constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-from ..mm_utils import tokenizer_image_token
-#from ..model import
-from ..model.builder import load_pretrained_model
-from ..conversation import conv_templates, SeparatorStyle
+from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
+from llava.mm_utils import tokenizer_image_token, get_model_name_from_path
+from llava.model.builder import load_pretrained_model
+from llava.conversation import conv_templates
 
 
 
 def model_init(model_path=None, focus_layers=None, smooth_forward_segments=None, reforward=False, nr_frames=16):
-
     warnings.filterwarnings("ignore")
     # Load the OneVision model
     model_name = "llava_qwen"
@@ -32,19 +26,24 @@ def model_init(model_path=None, focus_layers=None, smooth_forward_segments=None,
     model.get_model().config.segment_length = 16
     model.get_model().config.plot_sys_user_prompt_sim = False
     # model.get_model().config.video_name = paths[0].split('/')[-1].removesuffix('.mp4')
-    if focus_layers is None:
+    # variable config options
+    # model.get_model().config.original_seq_length = -1
+    model.get_model().config.focus_layers = np.fromstring(focus_layers, sep=',', dtype=int)
+    if model.get_model().config.focus_layers[0] == -1:
         model.get_model().config.focus_llm = False
         model.get_model().config.segment_pruning = False
+        model.get_model().config.reforward = reforward
     else:
-        # variable config options
-        model.get_model().config.original_seq_length = -1
-        model.get_model().config.focus_layers = np.fromstring(focus_layers, sep=',', dtype=int)
         model.get_model().config.smooth_forward_segments = np.fromstring(smooth_forward_segments, sep=',', dtype=int)
         model.get_model().config.focus_llm = True
         # get boolean value from string
         model.get_model().config.reforward = reforward
+
     num_frames = nr_frames
-    if focus_layers is not None:
+    if model.get_model().config.focus_layers[0] == -1:
+        model.get_model().config.use_cpu = False
+        model.get_model().config.use_sequential = False
+    else:
         if num_frames < 80:
             model.get_model().config.use_cpu = False
             model.get_model().config.use_sequential = False
@@ -54,6 +53,7 @@ def model_init(model_path=None, focus_layers=None, smooth_forward_segments=None,
         else:
             model.get_model().config.use_cpu = True
             model.get_model().config.use_sequential = True
+
     model.eval()
 
     return model, tokenizer, image_processor, "qwen_1_5"
@@ -73,13 +73,13 @@ def infer(model, video, instruct, tokenizer, image_processor, do_sample=False, v
         str: response of the model.
     """
 
+    instruct = DEFAULT_IMAGE_TOKEN + "\n" + instruct
     conv = copy.deepcopy(conv_templates[version])
     conv.append_message(conv.roles[0], instruct)
     conv.append_message(conv.roles[1], None)
     prompt_question = conv.get_prompt()
 
-    input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(
-        0).to(image_processor.device)
+    input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
     image_sizes = [frame.size for frame in video]
     video_tensor = image_processor.preprocess(video, return_tensors="pt")["pixel_values"].half().cuda()
     model.get_model().config.original_seq_length = -1
@@ -97,8 +97,10 @@ def infer(model, video, instruct, tokenizer, image_processor, do_sample=False, v
         return_dict_in_generate=True,
     )
     outputs = tokenizer.batch_decode(cont.sequences, skip_special_tokens=True)
-
-    return outputs
+    print(f"Response: {outputs}")
+    print(f"Response_0: {outputs[0]}")
+    exit(1)
+    return outputs[0]
 
 
 def x_infer(video, question, model, tokenizer, image_processor, mode='vanilla', do_sample=False, version='qwen_1_5'):

@@ -17,9 +17,10 @@ from torch.utils.data import Dataset, DataLoader
 import torch.multiprocessing as mp
 import sys
 
-from llava.eval import model_init, x_infer
+from llava.eval import x_infer, model_init
+from llava.model.builder import load_pretrained_model
 
-sys.path.append('./')
+#sys.path.append('./')
 
 # NOTE: Ignore TypedStorage warning, which refers to this link~(https://github.com/pytorch/pytorch/issues/97207#issuecomment-1494781560)
 warnings.filterwarnings('ignore', category=UserWarning, message='TypedStorage is deprecated')
@@ -42,10 +43,11 @@ def load_video(video_path, max_frames_num):
     else:
         vr = VideoReader(video_path[0], ctx=cpu(0))
     total_frame_num = len(vr)
+    fps = vr.get_avg_fps()
     uniform_sampled_frames = np.linspace(0, total_frame_num - 1, max_frames_num, dtype=int)
     frame_idx = uniform_sampled_frames.tolist()
     spare_frames = vr.get_batch(frame_idx).asnumpy()
-    return spare_frames  # (frames, height, width, channels)
+    return spare_frames, frame_idx, fps   # (frames, height, width, channels)
 
 
 class VideoMMEDataset(Dataset):
@@ -157,7 +159,7 @@ def build_videomme_eval(args, processor):
     questions = load_parquet(args.question_file)
     # questions = json.load(open(args.question_file, "r"))
     questions = get_chunk(questions, args.num_chunks, args.chunk_idx)
-    dataset = VideoMMEDataset(args.video_folder, args.subtitle_folder, questions, processor, args.for_get_frames_num)
+    dataset = VideoMMEDataset(args.video_folder, args.subtitle_folder, questions, processor, args.nr_frames)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers,
                             collate_fn=collate_fn)
 
@@ -183,8 +185,8 @@ def videomme_dump(record, instruct, output):
 
 def run_inference(args):
     # Initialize the model
+    model, tokenizer, image_processor, version = model_init(args.model_path, args.focus_layers, args.focus_segments, args.reforward, args.nr_frames)
 
-    tokenizer, model, image_processor = model_init(args.model_path, args.focus_layers, args.focus_segments, args.reforward, args.nr_frames)
     answer_file = os.path.expanduser(args.answer_file)
     answer_sub_file = answer_file.replace('.json', '_sub.json')
     os.makedirs(os.path.dirname(answer_file), exist_ok=True)
@@ -192,6 +194,7 @@ def run_inference(args):
     ans_sub_file = open(answer_sub_file, "w")
 
     val_loader = build_videomme_eval(args, image_processor)
+    print(f"Start inference on {len(val_loader)} samples")
 
     # Iterate over each sample in the ground truth file
     for i, (videos, subtitles, records) in enumerate(tqdm(val_loader)):
@@ -237,6 +240,7 @@ def run_inference(args):
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model-path', help='', required=True)
