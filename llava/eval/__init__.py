@@ -97,9 +97,6 @@ def infer(model, video, instruct, tokenizer, image_processor, do_sample=False, v
         return_dict_in_generate=True,
     )
     outputs = tokenizer.batch_decode(cont.sequences, skip_special_tokens=True)
-    print(f"Response: {outputs}")
-    print(f"Response_0: {outputs[0]}")
-    exit(1)
     return outputs[0]
 
 

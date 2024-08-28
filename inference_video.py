@@ -23,19 +23,19 @@ device_map = "auto"
 tokenizer, model, image_processor, max_length = load_pretrained_model(pretrained, None, model_name, device_map=device_map, attn_implementation="eager")
 # fixed config options
 #model.get_model().config.ratio = 0.5
-model.get_model().config.segment_pruning = False
+model.get_model().config.segment_pruning = True
 model.get_model().config.segment_length = 16
 model.get_model().config.plot_sys_user_prompt_sim = False
 # model.get_model().config.video_name = paths[0].split('/')[-1].removesuffix('.mp4')
 
 # variable config options
 model.get_model().config.original_seq_length = -1
-model.get_model().config.focus_layers = np.array([3])
+model.get_model().config.focus_layers = np.array([11])
 model.get_model().config.smooth_forward_segments = np.array([1])
-model.get_model().config.focus_llm = False
+model.get_model().config.focus_llm = True
 #get boolean value from string
-model.get_model().config.reforward = False
-num_frames = 16
+model.get_model().config.reforward = True
+num_frames = 32
 if num_frames < 80:
     model.get_model().config.use_cpu = False
     model.get_model().config.use_sequential = False
@@ -71,7 +71,7 @@ image_tensors.append(frames)
 
 # Prepare conversation input
 conv_template = "qwen_1_5"
-#question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
+question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
 #question = f"{DEFAULT_IMAGE_TOKEN}\nWhat happens between the truck and the train?"
 """question = f"{DEFAULT_IMAGE_TOKEN}\nThis video's subtitles are listed below:\nthis has been Messi's tournament he's\n \
 Bailey comes to meet him\n\
@@ -94,14 +94,12 @@ B. 2023 UEFA Champions League final.\n\
 C. FIFA World Cup 2018 Final. \n\
 D. 2018 UEFA European Championship Final. \n\
 The best answer is: " """
-question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
 
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
 
-print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]
 
