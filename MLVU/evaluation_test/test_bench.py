@@ -113,13 +113,13 @@ def main():
     disable_torch_init()
 
 
-    video_folder="eval/MLVU/video"
-    data_dir = f"eval/MLVU/leaderboard/test_question.json"
+    video_folder="MLVU/MLVU_Test/MLVU_Test/video"
+    data_dir = f"MLVU/MLVU_Test/MLVU_Test/test_question.json"
 
 
 
-    save_path = f"eval_output/MLVU/test_all_choice"
-    result_path=f"eval_output/MLVU/bench_all.json"
+    save_path = f"MLVU/MLVU_Test/test_all_choice"
+    result_path=f"MLVU/MLVU_Test/bench_all.json"
 
     dataset = MLVU(data_dir, video_folder)
 
