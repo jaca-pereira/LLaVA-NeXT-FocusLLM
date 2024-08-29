@@ -4,7 +4,7 @@ set -x
 
 EVAL_DATA_DIR=eval
 OUTPUT_DIR=eval_output
-CKPT_NAME=llava-onevision-qwen2-0.5b-ov
+CKPT_NAME=LLaVA-NeXT-Video-7B-DPO
 CKPT=lmms-lab/${CKPT_NAME}
 
 gpu_list="${CUDA_VISIBLE_DEVICES:-0}"
@@ -93,6 +93,7 @@ python llava/eval/eval_video_mcqa_videomme.py \
     --focus_segments $focus_segments \
     --selection_type $reforward \
     --nr_frames $nr_frames \
+    --version vicuna_v1 \
     --skip_missing
     #--return_categories_accuracy \
     #--return_sub_categories_accuracy \

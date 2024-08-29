@@ -225,11 +225,11 @@ def run_inference(args):
             for op_idx, op in enumerate(ops):
                 instruct += f"{op}\n"
             instruct += "The best answer is: "
-            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor,do_sample=False)
+            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor,do_sample=False, version=args.version)
             new_record['questions'][idx]['response'] = videomme_dump(record, instruct, output)
 
             instruct = f"This video's subtitles are listed below:\n{subtitle}\n" + instruct
-            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor, do_sample=False)
+            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor, do_sample=False, version=args.version)
             new_record_sub['questions'][idx]['response'] = videomme_dump(record, instruct, output)
 
         ans_file.write(json.dumps(new_record) + ",\n")
@@ -257,6 +257,7 @@ if __name__ == "__main__":
     parser.add_argument('--focus_segments', help='Focus segments for the model.', type=str)
     parser.add_argument('--reforward', help='Reforward parameter for the model.', type=bool)
     parser.add_argument('--nr_frames', help='Number of frames to process.', type=int)
+    parser.add_argument('--version', help='Conv template', type=str)
 
     args = parser.parse_args()
     #mp.set_start_method('spawn')
