@@ -51,6 +51,7 @@ if [ ! -f "$output_file" ]; then
             --focus_segments $focus_segments \
             --reforward $reforward \
             --nr_frames $nr_frames \
+            --version vicuna_v1 \
             &
     done
 
@@ -93,7 +94,6 @@ python llava/eval/eval_video_mcqa_videomme.py \
     --focus_segments $focus_segments \
     --selection_type $reforward \
     --nr_frames $nr_frames \
-    --version vicuna_v1 \
     --skip_missing
     #--return_categories_accuracy \
     #--return_sub_categories_accuracy \

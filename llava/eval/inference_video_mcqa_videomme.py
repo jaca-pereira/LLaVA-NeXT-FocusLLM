@@ -225,11 +225,11 @@ def run_inference(args):
             for op_idx, op in enumerate(ops):
                 instruct += f"{op}\n"
             instruct += "The best answer is: "
-            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor,do_sample=False, version=args.version)
+            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor,do_sample=False, version="vicuna_v1")
             new_record['questions'][idx]['response'] = videomme_dump(record, instruct, output)
 
             instruct = f"This video's subtitles are listed below:\n{subtitle}\n" + instruct
-            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor, do_sample=False, version=args.version)
+            output = x_infer(video_tensor, instruct, mode='vanilla', model=model, tokenizer=tokenizer, image_processor=image_processor, do_sample=False, version="vicuna_v1")
             new_record_sub['questions'][idx]['response'] = videomme_dump(record, instruct, output)
 
         ans_file.write(json.dumps(new_record) + ",\n")
